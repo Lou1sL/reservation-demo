@@ -1,0 +1,40 @@
+version: '3'
+services:
+
+  couchbase:
+    image: couchbase
+    container_name: couchbase
+    ports:
+      - "8091-8097:8091-8097"
+      - "9123:9123"
+      - "11207:11207"
+      - "11210:11210"
+      - "11280:11280"
+      - "18091-18097:18091-18097"
+
+  redis:
+    image: "redis:latest"
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  reservation-backend:
+    container_name: reservation-backend
+    build: ./reservation-backend
+    ports:
+      - "3000:3000"
+    # environment:
+    #   NODE_ENV: production
+    depends_on:
+      - couchbase
+      - redis
+
+  reservation-frontend:
+    container_name: reservation-frontend
+    build: ./reservation-frontend
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - reservation-backend
