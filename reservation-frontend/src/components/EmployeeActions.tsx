@@ -22,50 +22,47 @@ const UPDATE_RESERVATION = gql`
     }
   }
 `;
+
+interface Reservation {
+  id?: string;
+  guestName: string;
+  guestContactInfo: string;
+  expectedArrivalTime: string;
+  reservedTableSize: number;
+  reservationStatus?: string;
+}
+
 const EmployeeActions: React.FC = () => {
   const { data, loading, error, refetch } = useQuery(GET_RESERVATIONS, { variables: { page: 0, limit: 20 } });
+  
   const [updateReservation] = useMutation(UPDATE_RESERVATION);
-
-  const [editId, setEditId] = useState<string | null>(null);
-  const [guestName, setGuestName] = useState('');
-  const [guestContactInfo, setGuestContactInfo] = useState('');
-  const [expectedArrivalTime, setExpectedArrivalTime] = useState('');
-  const [reservedTableSize, setReservedTableSize] = useState('');
-  const [reservationStatus, setReservationStatus] = useState('');
+  const [updateData, setUpdateData] = useState<Reservation>({
+    id: '',
+    guestName: '',
+    guestContactInfo: '',
+    expectedArrivalTime: new Date().toISOString(),
+    reservedTableSize: 1,
+  });
 
   if (loading) return <p>Loading all reservations...</p>;
   if (error) return <p>Error loading all reservations!</p>;
 
-  const handleEdit = (reservation: any) => {
-    setEditId(reservation.id);
-    setGuestName(reservation.guestName);
-    setGuestContactInfo(reservation.guestContactInfo);
-    setExpectedArrivalTime(reservation.expectedArrivalTime);
-    setReservedTableSize(reservation.reservedTableSize);
-    setReservationStatus(reservation.reservationStatus);
+  const handleEdit = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUpdateData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
+  const handleUpdateInfo = async () => {
     await updateReservation({
-      variables: {
-        id: editId,
-        guestName,
-        guestContactInfo,
-        expectedArrivalTime: new Date(expectedArrivalTime).toISOString(),
-        reservedTableSize: parseInt(reservedTableSize as string, 0),
-        reservationStatus: reservationStatus,
-      }
+      variables: { ...updateData, reservationStatus: undefined },
     });
-    setEditId(null);
+    setUpdateData((prev) => ({ ...prev, id: '' }));
     refetch();
   };
 
-  const handleChangeStatus = async (id: string, reservationStatus: string) => {
+  const handleUpdateStatus = async (id: any, reservationStatus: string) => {
     await updateReservation({
-      variables: {
-        id,
-        reservationStatus,
-      }
+      variables: { id, reservationStatus },
     });
     refetch();
   };
@@ -74,23 +71,23 @@ const EmployeeActions: React.FC = () => {
     <div>
       <h2>All Reservations</h2>
       <ul>
-        {data.reservations.map((reservation: any) => (
+        {data.reservations.map((reservation: Reservation) => (
           <li key={reservation.id}>
-            {editId === reservation.id ? (
+            {updateData.id === reservation.id ? (
               <div>
-                <input type="text" value={guestName} onChange={e => setGuestName(e.target.value)} />
-                <input type="text" value={guestContactInfo} onChange={e => setGuestContactInfo(e.target.value)} />
-                <input type="date" value={expectedArrivalTime} onChange={e => setExpectedArrivalTime(e.target.value)} />
-                <input type="number" value={reservedTableSize} onChange={e => setReservedTableSize(e.target.value)} />
-                <button onClick={handleSave}>Save</button>
-                <button onClick={() => setEditId(null)}>Cancel</button>
+                <input type="text" name="guestName" value={updateData.guestName} onChange={handleEdit} />
+                <input type="text" name="guestContactInfo" value={updateData.guestContactInfo} onChange={handleEdit} />
+                <input type="text" name="expectedArrivalTime" value={updateData.expectedArrivalTime} onChange={handleEdit} />
+                <input type="number" name="reservedTableSize" value={updateData.reservedTableSize} onChange={handleEdit} />
+                <button onClick={handleUpdateInfo}>Save</button>
+                <button onClick={() => setUpdateData((prev) => ({ ...prev, id: '' }))}>Cancel</button>
               </div>
             ) : (
               <div>
                 name: {reservation.guestName} contact: {reservation.guestContactInfo} ETA: {reservation.expectedArrivalTime} size: {reservation.reservedTableSize} status: {reservation.reservationStatus}  
-                <button onClick={() => handleEdit(reservation)}>Edit</button>
-                <button onClick={() => handleChangeStatus(reservation.id, 'Completed')}>Set Completed</button>
-                <button onClick={() => handleChangeStatus(reservation.id, 'Cancelled')}>Set Cancelled</button>
+                <button onClick={() => setUpdateData(reservation)}>Edit</button>
+                <button onClick={() => handleUpdateStatus(reservation.id, 'Completed')}>Set Completed</button>
+                <button onClick={() => handleUpdateStatus(reservation.id, 'Cancelled')}>Set Cancelled</button>
               </div>
             )}
           </li>
