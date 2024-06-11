@@ -19,6 +19,7 @@ services:
       - "6379:6379"
 
   reservation-backend:
+    restart: always
     container_name: reservation-backend
     build: ./reservation-backend
     ports:
@@ -30,6 +31,7 @@ services:
       - redis
 
   reservation-frontend:
+    restart: always
     container_name: reservation-frontend
     build: ./reservation-frontend
     ports:
